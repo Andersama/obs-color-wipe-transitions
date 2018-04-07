@@ -1,0 +1,140 @@
+uniform float4x4  ViewProj;
+uniform texture2d a_tex;
+uniform texture2d b_tex;
+uniform texture2d c_tex;
+uniform float4    color_target_a;
+uniform float4    color_target_b;
+uniform bool  invert;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+/*
+float GetColorDist(float3 rgb)
+{
+	return distance(key_color.rgb, rgb);
+}
+*/
+float GetColorDist(float4 rgba_1, float4 rgba_2)
+{
+	return distance(rgba_1.rgb, rgba_2.rgb);
+}
+
+float GetColorDistExact(float4 rgba_1, float4 rgba_2)
+{
+	return distance(rgba_1.rgba, rgba_2.rgba);
+}
+
+float4 convert_pmalpha(float4 color)
+{
+	float4 ret = color;
+	if (color.a >= 0.001)
+		ret.xyz /= color.a;
+	else
+		ret = float4(0.0, 0.0, 0.0, 0.0);
+	return ret;
+}
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSAnimatedWipe(VertData v_in) : TARGET
+{
+	float2 uv = v_in.uv;
+	float4 a_color = a_tex.Sample(textureSampler, uv);
+	float4 b_color = b_tex.Sample(textureSampler, uv);
+	float4 c_color = c_tex.Sample(textureSampler, uv);
+	float4 ret_color;
+	/*
+	if(invert){
+		if(any(c_color - color_target_a)){
+			if(any(c_color - color_target_b)){
+				ret_color = c_color;
+			} else {
+				ret_color = a_color;
+			}
+		} else {
+			ret_color = b_color;
+		}
+	} else {
+		if(any(c_color - color_target_a)){
+			if(any(c_color - color_target_b)){
+				ret_color = c_color;
+			} else {
+				ret_color = b_color;
+			}
+		} else {
+			ret_color = a_color;
+		}
+	}
+	*/
+	
+	if(invert){
+		if(GetColorDist(c_color, color_target_a) <= .017){
+			ret_color = b_color;
+		} else {
+			if(GetColorDist(c_color, color_target_b) <= .017){
+				ret_color = a_color;
+			} else {
+				ret_color = c_color;
+			}
+		}
+	} else {
+		if(GetColorDist(c_color, color_target_a) <= .017){
+			ret_color = a_color;
+		} else {
+			if(GetColorDist(c_color, color_target_b) <= .017){
+				ret_color = b_color;
+			} else {
+				ret_color = c_color;
+			}
+		}
+	}
+	
+	
+	/*
+	if(invert){
+		if(!any(c_color - color_target_a)){
+			ret_color = b_color;
+		} else {
+			if(!any(c_color - color_target_b)){
+				ret_color = a_color;
+			} else {
+				ret_color = c_color;
+			}
+		}
+	} else {
+		if(!any(c_color - color_target_a)){
+			ret_color = a_color;
+		} else {
+			if(!any(c_color - color_target_b)){
+				ret_color = b_color;
+			} else {
+				ret_color = c_color;
+			}
+		}
+	}
+	*/
+	return ret_color;
+}
+
+technique AnimatedWipe
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSAnimatedWipe(v_in);
+	}
+}
