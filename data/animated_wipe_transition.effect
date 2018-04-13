@@ -16,12 +16,7 @@ struct VertData {
 	float4 pos : POSITION;
 	float2 uv  : TEXCOORD0;
 };
-/*
-float GetColorDist(float3 rgb)
-{
-	return distance(key_color.rgb, rgb);
-}
-*/
+
 float GetColorDist(float4 rgba_1, float4 rgba_2)
 {
 	return distance(rgba_1.rgb, rgba_2.rgb);
@@ -57,29 +52,6 @@ float4 PSAnimatedWipe(VertData v_in) : TARGET
 	float4 b_color = b_tex.Sample(textureSampler, uv);
 	float4 c_color = c_tex.Sample(textureSampler, uv);
 	float4 ret_color;
-	/*
-	if(invert){
-		if(any(c_color - color_target_a)){
-			if(any(c_color - color_target_b)){
-				ret_color = c_color;
-			} else {
-				ret_color = a_color;
-			}
-		} else {
-			ret_color = b_color;
-		}
-	} else {
-		if(any(c_color - color_target_a)){
-			if(any(c_color - color_target_b)){
-				ret_color = c_color;
-			} else {
-				ret_color = b_color;
-			}
-		} else {
-			ret_color = a_color;
-		}
-	}
-	*/
 	
 	if(invert){
 		if(GetColorDist(c_color, color_target_a) <= .017){
@@ -102,31 +74,7 @@ float4 PSAnimatedWipe(VertData v_in) : TARGET
 			}
 		}
 	}
-	
-	
-	/*
-	if(invert){
-		if(!any(c_color - color_target_a)){
-			ret_color = b_color;
-		} else {
-			if(!any(c_color - color_target_b)){
-				ret_color = a_color;
-			} else {
-				ret_color = c_color;
-			}
-		}
-	} else {
-		if(!any(c_color - color_target_a)){
-			ret_color = a_color;
-		} else {
-			if(!any(c_color - color_target_b)){
-				ret_color = b_color;
-			} else {
-				ret_color = c_color;
-			}
-		}
-	}
-	*/
+
 	return ret_color;
 }
 
